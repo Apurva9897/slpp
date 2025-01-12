@@ -1,0 +1,38 @@
+.modal-body {
+    overflow-y: auto;
+    max-height: 75vh; 
+    padding: 1rem;
+}
+
+
+.modal-lg {
+    max-width: 70%;
+}
+
+.modal-content {
+    animation: fadeIn 0.3s ease-in-out; 
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+#scrollable-content {
+    max-height: 50vh; 
+    overflow-y: auto; 
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 15px;
+    background-color: #f9f9f9;
+}
+
+#scrollable-content::-webkit-scrollbar {
+    width: 8px;
+}
+
+#scrollable-content::-webkit-scrollbar-thumb {
+    background-color: #bbb;
+    border-radius: 4px;
+}
+
+#scrollable-content::-webkit-scrollbar-track {
+    background-color: #f1f1f1;
+}

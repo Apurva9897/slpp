@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2>{{ petition.title }}</h2>
+<p><strong>Created by:</strong> {{ petition.creator.full_name }}</p>
+<p><strong>Status:</strong> {{ petition.status }}</p>
+<p><strong>Signatures:</strong> {{ petition.signatures }}</p>
+<p><strong>Details:</strong> {{ petition.text }}</p>
+
+{% if petition.response %}
+<h3>Parliament's Response:</h3>
+<p>{{ petition.response }}</p>
+{% endif %}
+
+{% if petition.status == 'open' %}
+<form method="POST" action="{{ url_for('sign_petition', petition_id=petition.id) }}">
+    <button type="submit" class="btn btn-success">Sign Petition</button>
+</form>
+{% endif %}
+{% endblock %}

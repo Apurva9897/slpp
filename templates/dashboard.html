@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>Welcome, {{ current_user.fullname }}</h2>
+        <form method="POST" action="{{ url_for('logout') }}">
+            <button type="submit" class="btn btn-danger">Logout</button>
+        </form>
+    </div>
+
+    <ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="all-petitions-tab" data-bs-toggle="tab" data-bs-target="#all-petitions" type="button" role="tab" aria-controls="all-petitions" aria-selected="false">
+                All Petitions
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="my-petitions-tab" data-bs-toggle="tab" data-bs-target="#my-petitions" type="button" role="tab" aria-controls="my-petitions" aria-selected="true">
+                My Petitions
+            </button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link" id="create-petition-tab" data-bs-toggle="tab" data-bs-target="#create-petition" type="button" role="tab" aria-controls="create-petition" aria-selected="false">
+                Create Petition
+            </button>
+        </li>
+    </ul>
+
+    <div class="tab-content mt-3" id="dashboardTabsContent">
+        <div class="tab-pane fade show active" id="all-petitions" role="tabpanel" aria-labelledby="all-petitions-tab">
+            <h3>All Petitions</h3>
+            {% if all_petitions %}
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th>Signatures</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for petition in all_petitions %}
+                        <tr>
+                            <td>
+                                <a href="#" class="view-petition-link" data-bs-toggle="modal" data-bs-target="#petitionModal" data-title="{{ petition.title }}" data-content="{{ petition.content }}" data-status="{{ petition.status }}" data-signatures="{{ petition.signature_count }}">
+                                    {{ petition.title }}
+                                </a>
+                            </td>
+                            <td>{{ petition.status }}</td>
+                            <td>{{ petition.signature_count }}</td>
+                            <td>
+                                    {% if petition.status == 'open' %}
+                                        {% if petition.petitioner_email == current_user.email %}
+                                            <button class="btn btn-warning btn-sm" disabled>You cannot sign your own petition</button>
+                                        {% elif current_user in petition.signed_by %}
+                                            <button class="btn btn-info btn-sm" disabled>Already Signed</button>
+                                        {% else %}
+                                            <form method="POST" action="{{ url_for('sign_petition', petition_id=petition.petition_id) }}">
+                                                <button class="btn btn-success btn-sm" type="submit">Sign Petition</button>
+                                            </form>
+                                        {% endif %}
+                                    {% else %}
+                                        <button class="btn btn-secondary btn-sm" disabled>Closed</button>
+                                    {% endif %}                                                                
+                            </td>                            
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No petitions available to sign.</p>
+            {% endif %}
+        </div>
+        
+        <div class="tab-pane fade" id="my-petitions" role="tabpanel" aria-labelledby="my-petitions-tab">
+            <h3>My Petitions</h3>
+            {% if my_petitions %}
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Title</th>
+                            <th>Status</th>
+                            <th>Signatures</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for petition in my_petitions %}
+                        <tr>
+                            <td>
+                                <a href="#" class="view-petition-link" data-bs-toggle="modal" data-bs-target="#petitionModal" data-title="{{ petition.title }}" data-content="{{ petition.content }}" data-status="{{ petition.status }}" data-signatures="{{ petition.signature_count }}">
+                                    {{ petition.title }}
+                                </a>
+                            </td>
+                            <td>{{ petition.status }}</td>
+                            <td>{{ petition.signature_count }}</td>
+                            <td>{{ petition.response or 'Pending' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No petitions found. Create one now!</p>
+            {% endif %}
+        </div>
+
+        <div class="tab-pane fade" id="create-petition" role="tabpanel" aria-labelledby="create-petition-tab">
+            <h3>Create a New Petition</h3>
+            <form method="POST" action="{{ url_for('create_petition') }}">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Petition Title</label>
+                    <input type="text" class="form-control" id="title" name="title" required>
+                </div>
+                <div class="mb-3">
+                    <label for="content" class="form-label">Petition Content</label>
+                    <textarea class="form-control" id="content" name="content" rows="5" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Submit Petition</button>
+            </form>
+        </div>        
+    </div>
+</div>
+
+<div class="modal fade" id="petitionModal" tabindex="-1" aria-labelledby="petitionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="petitionModalLabel">Petition Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" ariaa-label="Close"></button>
+            </div>
+            <div class="modal-body overflow-auto" style="max-height: 75vh;">
+                <h4 id="modal-title"></h4>
+                <p id="modal-content"></p>
+                <p><strong>Status:</strong> <span id="modal-status"></span></p>
+                <p><strong>Signatures:</strong> <span id="modal-signatures"></span></p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const modal = new bootstrap.Modal(document.getElementById('petitionModal'));
+        const petitionLinks = document.querySelectorAll('.view-petition-link');
+        
+        petitionLinks.forEach(link => {
+            link.addEventListener('click', function(event) {
+                document.getElementById('modal-title').textContent = this.dataset.title;
+                document.getElementById('modal-content').textContent = this.dataset.content;
+                document.getElementById('modal-status').textContent = this.dataset.status;
+                document.getElementById('modal-signatures').textContent = this.dataset.signatures;
+            });
+        });
+    });
+</script>
+{% endblock %}

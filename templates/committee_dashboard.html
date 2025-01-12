@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="text-center mb-4">Committee Dashboard</h2>
+        <a href="{{ url_for('logout') }}" class="btn btn-danger">Logout</a>
+    </div>
+
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4>Signature Threshold</h4>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('set_threshold') }}">
+                <div class="input-group">
+                    <input type="number" class="form-control" name="threshold" placeholder="Set Threshold" value="{{ signature_threshold }}" required>
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4>All Petitions</h4>
+        </div>
+        <div class="card-body">
+            {% if petitions %}
+            <table class="table table-bordered table-striped">
+                <thead class="table-dark">
+                    <tr>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>Signatures</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for petition in petitions %}
+                    <tr>
+                        <td>
+                            <a href="#" class="view-petition-link" 
+                               data-bs-toggle="modal" 
+                               data-bs-target="#petitionModal" 
+                               data-id="{{ petition.petition_id }}" 
+                               data-title="{{ petition.title }}" 
+                               data-content="{{ petition.content }}" 
+                               data-signatures="{{ petition.signature_count }}" 
+                               data-status="{{ petition.status }}" 
+                               data-response="{{ petition.response }}">
+                                {{ petition.title }}
+                            </a>
+                        </td>
+                        <td>{{ petition.status }}</td>
+                        <td>{{ petition.signature_count }}</td>
+                        <td>
+                            {% if petition.status == 'open' and petition.signature_count >= signature_threshold %}
+                                <button class="btn btn-warning btn-sm respond-petition-btn" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#responseModal" 
+                                        data-id="{{ petition.petition_id }}">Click to Respond</button>
+                            {% else %}
+                                <button class="btn btn-secondary btn-sm" disabled>
+                                    {{ 'Closed' if petition.status == 'closed' else 'Threshold Not Met' }}
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>No petitions found.</p>
+        {% endif %}        
+        </div>
+    </div>
+</div>
+
+<!-- Petition Details Modal -->
+<div class="modal fade" id="petitionModal" tabindex="-1" role="dialog" aria-labelledby="petitionModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="petitionModalLabel">Petition Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <h4 id="modal-title" class="mb-3"></h4>
+                <div id="scrollable-content" style="max-height: 50vh; overflow-y: auto; border: 1px solid #ddd; border-radius: 5px; padding: 15px; background-color: #f9f9f9;">
+                    <p id="modal-content"></p>
+                </div>
+                <p class="mt-3"><strong>Status:</strong> <span id="modal-status"></span></p>
+                <p><strong>Signatures:</strong> <span id="modal-signatures"></span></p>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close This View</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Petition Response Modal -->
+<div class="modal fade" id="responseModal" tabindex="-1" aria-labelledby="responseModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <form method="POST" action="{{ url_for('respond_to_petition') }}">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="responseModalLabel">Respond to Petition</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <h6 id="response-petition-title" class="text-muted"></h6>
+                    
+                    <input type="hidden" id="response-petition-id" name="petition_id">
+                    <textarea class="form-control mt-3" name="response" rows="5" placeholder="Enter your response..." required></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Submit Response</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const petitionLinks = document.querySelectorAll('.view-petition-link');
+        petitionLinks.forEach(link => {
+            link.addEventListener('click', function () {
+                document.getElementById('modal-title').textContent = this.dataset.title;
+                document.getElementById('modal-content').textContent = this.dataset.content;
+                document.getElementById('modal-signatures').textContent = this.dataset.signatures;
+                document.getElementById('modal-status').textContent = this.dataset.status;
+            });
+        });
+    });
+    
+    document.addEventListener('DOMContentLoaded', function () {
+        const respondBtns = document.querySelectorAll('.respond-petition-btn');
+        respondBtns.forEach(btn => {
+            btn.addEventListener('click', function () {
+                const petitionTitle = this.closest('tr').querySelector('td a').textContent;
+                document.getElementById('response-petition-title').textContent = `You are responding to: Petition - ${petitionTitle}`;
+                document.getElementById('response-petition-id').value = this.dataset.id;
+            });
+        });
+    });    
+</script>
+{% endblock %}
